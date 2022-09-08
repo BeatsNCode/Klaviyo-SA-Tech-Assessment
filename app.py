@@ -30,8 +30,6 @@ response = requests.get(klaviyo_list_members_url, headers=headers)
 response_dict = response.json()
 list_data = response_dict['records']
 
-email = 'jre.augustin@gmail.com'
-
 # Next, create a function that will run an Email Address through the Kickbox Email Verification API
 def kickbox_verify_email(email):
     kickbox_verify_url = f'https://api.kickbox.com/v2/verify?email={email}&apikey={kickbox_api_key}'
@@ -51,7 +49,7 @@ def twilio_phone_lookup(phone_number):
 # Profile ID will serve a unique identifier when storing the results from a lookup
 # Email Address will be validated through Kickbox's Email Verification API
 # Phone Number will be validated through Twilio's Lookup API
-# profile_id = ''
+profile_id = ''
 email = ''
 phone_number = ''
 
@@ -67,6 +65,8 @@ for profile in list_data:
     if email != None:
         kickbox_data = kickbox_verify_email(email)
         print(kickbox_data)
+
+    
     
 
 
