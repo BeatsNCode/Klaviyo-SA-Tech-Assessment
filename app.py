@@ -1,6 +1,7 @@
 import requests
 import os
 from twilio.rest import Client
+import sqlite3
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -17,7 +18,6 @@ twilio_account_sid = os.getenv('TWILIO_ACCOUNT_SID')
 twilio_api_key = os.getenv('TWILIO_API_KEY')
 client = Client(twilio_account_sid, twilio_api_key)
 
-
 # First, the Klaviyo List V2 API API will be leveraged to pull data on all members of a list
 klaviyo_list_id = 'UwaMMy'
 
@@ -29,6 +29,17 @@ response = requests.get(klaviyo_list_members_url, headers=headers)
 
 response_dict = response.json()
 list_data = response_dict['records']
+
+# Then, a database will be created to track results from List Scanning process
+connection = sqlite3.connect("scanned_profiles_database.db")
+cursor = connection.cursor()
+cursor.execute("CREATE TABLE IF NOT EXISTS scanned_profiles('Profile ID' PRIMARY KEY, \
+                                              'Email Address', \
+                                              'Kickbox Result', \
+                                              'Phone Number', \
+                                              Carrier, \
+                                              Type)")
+
 
 # Next, create a function that will run an Email Address through the Kickbox Email Verification API
 def kickbox_verify_email(email):
@@ -58,13 +69,15 @@ for profile in list_data:
     email = profile.get('email')
     phone_number = profile.get('phone_number')
 
-    if phone_number != None:
-        twilio_data = twilio_phone_lookup(phone_number)
-        print(twilio_data)
+    # if phone_number != None:
+    #     twilio_data = twilio_phone_lookup(phone_number)
+    #     print(twilio_data)
 
-    if email != None:
-        kickbox_data = kickbox_verify_email(email)
-        print(kickbox_data)
+    # if email != None:
+    #     kickbox_data = kickbox_verify_email(email)
+    #     print(kickbox_data)
+
+
 
     
     
