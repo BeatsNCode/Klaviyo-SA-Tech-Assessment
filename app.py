@@ -58,6 +58,20 @@ def twilio_phone_lookup(phone_number):
                      .fetch(type=['carrier'])
     return phone_lookup.carrier
 
+# Create Profile Results payload
+def get_profile_results(klaviyo_id, email, email_deliv_result, kickbox_score, phone, carrier, type ):
+    profile_data = {
+        'Profile ID': klaviyo_id,
+        'Email': email,
+        'Kickbox Result': email_deliv_result,
+        'Sendex Score': kickbox_score,
+        'Phone Number': phone,
+        'Carrier Name': carrier,
+        'Number Type': type
+    }
+    return profile_data
+
+
 # The Profile ID, Email and Phone Number will be collected next, to begin the validation process
 # Profile ID will serve a unique identifier when storing the results from a lookup
 # Email Address will be validated through Kickbox's Email Verification API
@@ -77,7 +91,6 @@ for profile in list_data:
     carrier_name = twilio_data['name']
     number_type = twilio_data['type']
 
-
     if email != None:
         kickbox_data = kickbox_verify_email(email)
 
@@ -85,30 +98,16 @@ for profile in list_data:
     sendex_score = kickbox_data['sendex']
 
     # Create dictionary to store Profile Data for future use
-    profile_data = {
-        'Profile ID': profile_id,
-        'Email': email,
-        'Kickbox Result': kickbox_result,
-        'Sendex Score': sendex_score,
-        'Phone Number': phone_number,
-        'Carrier Name': carrier_name,
-        'Number Type': number_type
-    }
+    lookup_results = get_profile_results(profile_id, email, kickbox_result, sendex_score, phone_number, carrier_name, number_type)
 
-    print(profile_data)
+    print(lookup_results)
 
     # Store and push Profile Lookup Data (Email + Phone) to 'scanned_profiles_database.db'
+    
+
     # If an Email Address is not 'deliverable' according to kickbox, suppress in Klaviyo
     # If a Phone Number is not of the 'mobile' type, suppress in Klaviyo
-    # Create custom metric indicating a profile was scanned, and what the results were
+    # Create custom metric indicating a profile was scanned, and what the results were https://developers.klaviyo.com/en/reference/track-post
     # Create a cron job that will run this script over and over
-    # Find a way to check if a profile's email and/or phone is already in the 'scanned_profiles_database.db', not to scan them again
-
-
-
-
-    
-    
-
-
-
+    # Check if a profile's email and/or phone is already in the 'scanned_profiles_database.db', 
+    # If profile email/phone not previously scanned, initiate scan and update database 
