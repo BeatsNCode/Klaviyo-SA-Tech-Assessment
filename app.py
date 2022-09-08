@@ -18,7 +18,7 @@ twilio_account_sid = os.getenv('TWILIO_ACCOUNT_SID')
 twilio_api_key = os.getenv('TWILIO_API_KEY')
 client = Client(twilio_account_sid, twilio_api_key)
 
-# First, the Klaviyo List V2 API API will be leveraged to pull data on all members of a list
+# The Klaviyo List V2 API API will be leveraged to pull data on all members of a list
 klaviyo_list_id = 'UwaMMy'
 
 klaviyo_list_members_url = f'https://a.klaviyo.com/api/v2/group/{klaviyo_list_id}/members/all?api_key={klaviyo_private_api_key}'
@@ -30,15 +30,17 @@ response = requests.get(klaviyo_list_members_url, headers=headers)
 response_dict = response.json()
 list_data = response_dict['records']
 
-# Then, a database will be created to track results from List Scanning process
+# Then, database will be created to track results from List Scanning process
+# Numbers already added to this database will be excluded from future list scans
 connection = sqlite3.connect("scanned_profiles_database.db")
 cursor = connection.cursor()
 cursor.execute("CREATE TABLE IF NOT EXISTS scanned_profiles('Profile ID' PRIMARY KEY, \
-                                              'Email Address', \
-                                              'Kickbox Result', \
-                                              'Phone Number', \
-                                              Carrier, \
-                                              Type)")
+                                                            'Email Address', \
+                                                            'Kickbox Result', \
+                                                            'Sendex Score (Out of 1)', \
+                                                            'Phone Number', \
+                                                            'Number Carrier', \
+                                                            'Number Type')")
 
 
 # Next, create a function that will run an Email Address through the Kickbox Email Verification API
@@ -69,13 +71,39 @@ for profile in list_data:
     email = profile.get('email')
     phone_number = profile.get('phone_number')
 
-    # if phone_number != None:
-    #     twilio_data = twilio_phone_lookup(phone_number)
-    #     print(twilio_data)
+    if phone_number != None:
+        twilio_data = twilio_phone_lookup(phone_number)
 
-    # if email != None:
-    #     kickbox_data = kickbox_verify_email(email)
-    #     print(kickbox_data)
+    carrier_name = twilio_data['name']
+    number_type = twilio_data['type']
+
+
+    if email != None:
+        kickbox_data = kickbox_verify_email(email)
+
+    kickbox_result = kickbox_data['result']
+    sendex_score = kickbox_data['sendex']
+
+    # Create dictionary to store Profile Data for future use
+    profile_data = {
+        'Profile ID': profile_id,
+        'Email': email,
+        'Kickbox Result': kickbox_result,
+        'Sendex Score': sendex_score,
+        'Phone Number': phone_number,
+        'Carrier Name': carrier_name,
+        'Number Type': number_type
+    }
+
+    print(profile_data)
+
+    # Store and push Profile Lookup Data (Email + Phone) to 'scanned_profiles_database.db'
+    # If an Email Address is not 'deliverable' according to kickbox, suppress in Klaviyo
+    # If a Phone Number is not of the 'mobile' type, suppress in Klaviyo
+    # Create custom metric indicating a profile was scanned, and what the results were
+    # Create a cron job that will run this script over and over
+    # Find a way to check if a profile's email and/or phone is already in the 'scanned_profiles_database.db', not to scan them again
+
 
 
 
