@@ -4,7 +4,7 @@
 In this challenge, the goal is to create a integration using Twilio's Lookup API and Kickbox's Email Verification API, to periodically validate any list's Email and Phone Number data. While Double Opt-in is a best practice in the List Collection domain, it is not always an option customers are looking to consider as part of their subscriber collection strategy. For this reason, I see some benefits in this potential fallback, as it allows a user to validate profile data on the back-end, with little impact to the user experience.
 
 #### Visual Representation of this solution
-https://imgur.com/a/H0T4uEe
+![List Scann](https://user-images.githubusercontent.com/84048784/189366623-5314108f-4675-4113-bd0c-338bd4c98f05.jpg)
 
 #### This solution will:
 - Pull Profile data from a specific Klaviyo List
