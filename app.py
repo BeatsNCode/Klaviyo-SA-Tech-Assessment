@@ -134,12 +134,14 @@ for profile in list_data:
     email = profile.get('email')
     phone_number = profile.get('phone_number')
 
+    # Non existing phone numbers will be skipped as they will return an error from Twilio
     if phone_number != 'None':
         twilio_data = twilio_phone_lookup(phone_number)
 
     carrier_name = twilio_data['name']
     number_type = twilio_data['type']
 
+    # For phone-only profiles, email address will be skipped from the Kickbox Verify process
     if email != 'None':
         kickbox_data = kickbox_verify_email(email)
 
@@ -149,6 +151,7 @@ for profile in list_data:
     # Create dictionary to store Profile Data for future use
     lookup_results = get_profile_results(profile_id, email, kickbox_result, sendex_score, phone_number, carrier_name, number_type)
 
+    # List elements to be passed to SQLite database as rows
     lookup_results_list = [profile_id, \
                            email, \
                            kickbox_result, \
@@ -170,13 +173,18 @@ for profile in list_data:
     # If an Email Address is not 'deliverable' according to kickbox, suppress in Klaviyo
     email_deliverability_probability = lookup_results.get('Kickbox Result')
 
+    # Possible values are `deliverable`, `non-deliverable` and `Unknown`
+    # Kickbox recommends sending a DOI email to email addresses that come up as `Unknown`,
+    # However, for the sake of this exercise, they will also be suppressed
     if email_deliverability_probability != 'deliverable':
         # suppress email address in Klaviyo
         suppress_email_address(email)
 
     print(f'[{profile_id}] {email} has a Kickbox Sendex Score of {sendex_score}/1 - deliverability probability: {email_deliverability_probability}')
 
-    # If a Phone Number is present on the profile, or the phone number is not of the 'mobile' type, suppress in Klaviyo
+    # If a Phone Number is present on the profile, or the phone number is not of the 'mobile' type, suppress in Klaviyo.
+    # Possible values for `Number Type` are `Mobile`, `Landline` and `VOIP`, and some VOIP lines are able to receive SMS,
+    # However, given how inconsistent deliveries can be, and for the sake of this exercise, they will be supppresssed for SMS.
     if phone_number != 'None' and number_type != 'mobile':
         # suppress phone number in Klaviyo
         suppress_phone_number(phone_number)
@@ -184,16 +192,19 @@ for profile in list_data:
         if number_type == 'None':
             number_type = 'Unknown'
 
+    # Setting up customer_properties for Track Request
     customer_properties = {'$email': f'{email}', 
                            '$phone_number': f'{phone_number}'}
 
     print(f'[{profile_id}] {phone_number} is of the {number_type} type and is suppressed from SMS')
     print(' ') # extra line for logging purposes
 
+    # Setting up event properties for Track Request
     properties = lookup_results
 
     # Create custom 'Scanned Profile' metric for each profile from List
     track_scanned_profile_event('Scanned Profile', customer_properties, properties)
 
+# Close SQLite session
 connection.commit()
 connection.close()
