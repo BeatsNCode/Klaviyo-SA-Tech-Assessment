@@ -1,4 +1,3 @@
-from xml.etree.ElementTree import TreeBuilder
 import requests
 import os
 from twilio.rest import Client
