@@ -173,7 +173,7 @@ for profile in list_data:
     # If an Email Address is not 'deliverable' according to kickbox, suppress in Klaviyo
     email_deliverability_probability = lookup_results.get('Kickbox Result')
 
-    # Possible values are `deliverable`, `non-deliverable` and `Unknown`
+    # Possible values are `deliverable`, `non-deliverable`, `risky` and `Unknown`
     # Kickbox recommends sending a DOI email to email addresses that come up as `Unknown`,
     # However, for the sake of this exercise, they will also be suppressed
     if email_deliverability_probability != 'deliverable':
