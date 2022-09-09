@@ -1,3 +1,4 @@
+from xml.etree.ElementTree import TreeBuilder
 import requests
 import os
 from twilio.rest import Client
@@ -112,16 +113,14 @@ def track_scanned_profile_event(event, customer_properties, properties):
         'properties': properties
     }
 
-    print(payload)
+    print(f"'Track Event Payload': {payload}")
     headers = {"Accept": "text/html",
                "Content-Type": "application/x-www-form-urlencoded"}
 
     response = requests.post(url, json=payload)
-    print(response.url)
-    print(response.status_code)
     print(response.text)
+    print(response.status_code)
     return response
-
 
 # The Profile ID, Email and Phone Number will be collected next, to begin the validation process
 # Profile ID will serve a unique identifier when storing the results from a lookup
@@ -176,7 +175,7 @@ for profile in list_data:
         # suppress email address in Klaviyo
         suppress_email_address(email)
 
-        print(f'[{profile_id}] {email} has a Kickbox Sendex Score of {sendex_score}/1 - deliverability probability: {email_deliverability_probability}')
+    print(f'[{profile_id}] {email} has a Kickbox Sendex Score of {sendex_score}/1 - deliverability probability: {email_deliverability_probability}')
 
     # If a Phone Number is present on the profile, or the phone number is not of the 'mobile' type, suppress in Klaviyo
     if phone_number != 'None' and number_type != 'mobile':
@@ -189,16 +188,13 @@ for profile in list_data:
     customer_properties = {'$email': f'{email}', 
                            '$phone_number': f'{phone_number}'}
 
-
     print(f'[{profile_id}] {phone_number} is of the {number_type} type and is suppressed from SMS')
+    print(' ') # extra line for logging purposes
 
     properties = lookup_results
 
-    # Create custom metric indicating a profile was scanned, and what the results were https://developers.klaviyo.com/en/reference/track-post
+    # Create custom 'Scanned Profile' metric for each profile from List
     track_scanned_profile_event('Scanned Profile', customer_properties, properties)
-    
-    # Create a cron job that will run this script over and over
-    # Check if a profile's email and/or phone is already in the 'scanned_profiles_database.db', 
 
 connection.commit()
 connection.close()
