@@ -59,7 +59,7 @@ def twilio_phone_lookup(phone_number):
     return phone_lookup.carrier
 
 # Create Profile Results payload
-def get_profile_results(klaviyo_id, email, email_deliv_result, kickbox_score, phone, carrier, type ):
+def get_profile_results(klaviyo_id, email, email_deliv_result, kickbox_score, phone, carrier, type):
     profile_data = {
         'Profile ID': klaviyo_id,
         'Email': email,
@@ -85,6 +85,7 @@ def suppress_email_address(email):
     response = requests.post(klaviyo_suppression_list_url, data=payload, headers=headers)
     return response
 
+# Create a funciton to suppress phone numbers that are not of the 'mobile' type
 def suppress_phone_number(phone):
     url = f'https://a.klaviyo.com/api/v2/list/{klaviyo_list_id}/subscribe?api_key={klaviyo_private_api_key}'
 
@@ -100,6 +101,26 @@ def suppress_phone_number(phone):
     response = requests.post(url, json=payload, headers=headers)
     return response
 
+# Next, leverage Klaviyo's Track API to create an event in-app to track profiles that have been scanned
+def track_scanned_profile_event(event, customer_properties, properties):
+    url = "https://a.klaviyo.com/api/track"
+
+    payload = {
+        'token': f'{klaviyo_public_api_key}',
+        'event': event,
+        'customer_properties': customer_properties,
+        'properties': properties
+    }
+
+    print(payload)
+    headers = {"Accept": "text/html",
+               "Content-Type": "application/x-www-form-urlencoded"}
+
+    response = requests.post(url, json=payload)
+    print(response.url)
+    print(response.status_code)
+    print(response.text)
+    return response
 
 
 # The Profile ID, Email and Phone Number will be collected next, to begin the validation process
@@ -115,13 +136,13 @@ for profile in list_data:
     email = profile.get('email')
     phone_number = profile.get('phone_number')
 
-    if phone_number != None:
+    if phone_number != 'None':
         twilio_data = twilio_phone_lookup(phone_number)
 
     carrier_name = twilio_data['name']
     number_type = twilio_data['type']
 
-    if email != None:
+    if email != 'None':
         kickbox_data = kickbox_verify_email(email)
 
     kickbox_result = kickbox_data['result']
@@ -129,7 +150,6 @@ for profile in list_data:
 
     # Create dictionary to store Profile Data for future use
     lookup_results = get_profile_results(profile_id, email, kickbox_result, sendex_score, phone_number, carrier_name, number_type)
-    # print(lookup_results)
 
     lookup_results_list = [profile_id, \
                            email, \
@@ -159,19 +179,26 @@ for profile in list_data:
         print(f'[{profile_id}] {email} has a Kickbox Sendex Score of {sendex_score}/1 - deliverability probability: {email_deliverability_probability}')
 
     # If a Phone Number is present on the profile, or the phone number is not of the 'mobile' type, suppress in Klaviyo
-    if phone_number != None and number_type != 'mobile':
+    if phone_number != 'None' and number_type != 'mobile':
         # suppress phone number in Klaviyo
         suppress_phone_number(phone_number)
 
-        if number_type == None:
+        if number_type == 'None':
             number_type = 'Unknown'
 
-        print(f'[{profile_id}] {phone_number} is of the {number_type} type and is suppressed from SMS')
+    customer_properties = {'$email': f'{email}', 
+                           '$phone_number': f'{phone_number}'}
+
+
+    print(f'[{profile_id}] {phone_number} is of the {number_type} type and is suppressed from SMS')
+
+    properties = lookup_results
 
     # Create custom metric indicating a profile was scanned, and what the results were https://developers.klaviyo.com/en/reference/track-post
+    track_scanned_profile_event('Scanned Profile', customer_properties, properties)
+    
     # Create a cron job that will run this script over and over
     # Check if a profile's email and/or phone is already in the 'scanned_profiles_database.db', 
-    # If profile email/phone not previously scanned, initiate scan and update database 
 
 connection.commit()
 connection.close()
