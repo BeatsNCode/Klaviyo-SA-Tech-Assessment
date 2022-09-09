@@ -23,7 +23,7 @@ In this challenge, the goal is to create a integration using Twilio's Lookup API
 
 To test functionality of this solution, add new profiles into `SA Tech Assessment List`, and include both `Email` and `Phone Number`. Another way to test this tool is to add these examples into the CSV file located in `csv_file` folder, and uploading file to `SA Tech Assessment List`.
 
-When adding a phone number to a Klaviyo profile, make sure the country code is present `(+1617 xxx-xxxx)`. 
+When adding a phone number to a Klaviyo profile, make sure the country code is present `(+1617 xxx-xxxx)`. For more context, visit https://help.klaviyo.com/hc/en-us/articles/360046055671-Accepted-phone-number-formats-for-SMS-in-Klaviyo.  
 
 ### Install and Setup Instructions
 
