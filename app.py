@@ -71,8 +71,19 @@ def get_profile_results(klaviyo_id, email, email_deliv_result, kickbox_score, ph
     }
     return profile_data
 
-# Create function that will allow pushing the lookup results into a database
 
+# Create function that will suppress undeliverable email addresses in Klaviyo
+def suppress_email_address(email):
+    klaviyo_suppression_list_url = f'https://a.klaviyo.com/api/v1/people/exclusions?api_key={klaviyo_private_api_key}'
+
+    payload = {'email': f'{email}'}
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+
+    response = requests.post(klaviyo_suppression_list_url, data=payload, headers=headers)
+    return response
 
 
 # The Profile ID, Email and Phone Number will be collected next, to begin the validation process
@@ -102,14 +113,35 @@ for profile in list_data:
 
     # Create dictionary to store Profile Data for future use
     lookup_results = get_profile_results(profile_id, email, kickbox_result, sendex_score, phone_number, carrier_name, number_type)
+    # print(lookup_results)
 
-    lookup_results_list = [profile_id, email, kickbox_result, sendex_score, phone_number, carrier_name, number_type]
+    lookup_results_list = [profile_id, \
+                           email, \
+                           kickbox_result, \
+                           sendex_score, \
+                           phone_number, \
+                           carrier_name, \
+                           number_type]
 
     # Store and push Profile Lookup Data (Email + Phone) to 'scanned_profiles_database.db'
-    cursor.execute(f"INSERT OR IGNORE INTO scanned_profiles VALUES ('{lookup_results_list[0]}', '{lookup_results_list[1]}', '{lookup_results_list[2]}', '{lookup_results_list[3]}', '{lookup_results_list[4]}', '{lookup_results_list[5]}', '{lookup_results_list[6]}')")
+    cursor.execute(f"INSERT OR IGNORE INTO scanned_profiles VALUES ('{lookup_results_list[0]}', \
+                                                                    '{lookup_results_list[1]}', \
+                                                                    '{lookup_results_list[2]}', \
+                                                                    '{lookup_results_list[3]}', \
+                                                                    '{lookup_results_list[4]}', \
+                                                                    '{lookup_results_list[5]}', \
+                                                                    '{lookup_results_list[6]}')")
 
 
     # If an Email Address is not 'deliverable' according to kickbox, suppress in Klaviyo
+    email_deliverability_probability = lookup_results.get('Kickbox Result')
+
+    if email_deliverability_probability != 'deliverable':
+        # suppress email address in Klaviyo
+        suppress_email_address(email)
+
+        print(f'[{profile_id}] {email} has a Kickbox Sendex Score of {sendex_score}/1 - deliverability probability: {email_deliverability_probability}')
+
     # If a Phone Number is not of the 'mobile' type, suppress in Klaviyo
     # Create custom metric indicating a profile was scanned, and what the results were https://developers.klaviyo.com/en/reference/track-post
     # Create a cron job that will run this script over and over
