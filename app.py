@@ -80,10 +80,26 @@ def suppress_email_address(email):
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/x-www-form-urlencoded"
-    }
+        }
 
     response = requests.post(klaviyo_suppression_list_url, data=payload, headers=headers)
     return response
+
+def suppress_phone_number(phone):
+    url = f'https://a.klaviyo.com/api/v2/list/{klaviyo_list_id}/subscribe?api_key={klaviyo_private_api_key}'
+
+    payload = {'profiles': [
+            {
+                'phone_number': f'{phone}',
+                "sms_consent": False
+            }
+        ]}
+    headers = {"Accept": "application/json",
+               "Content-Type": "application/json"}
+
+    response = requests.post(url, json=payload, headers=headers)
+    return response
+
 
 
 # The Profile ID, Email and Phone Number will be collected next, to begin the validation process
@@ -142,7 +158,16 @@ for profile in list_data:
 
         print(f'[{profile_id}] {email} has a Kickbox Sendex Score of {sendex_score}/1 - deliverability probability: {email_deliverability_probability}')
 
-    # If a Phone Number is not of the 'mobile' type, suppress in Klaviyo
+    # If a Phone Number is present on the profile, or the phone number is not of the 'mobile' type, suppress in Klaviyo
+    if phone_number != None and number_type != 'mobile':
+        # suppress phone number in Klaviyo
+        suppress_phone_number(phone_number)
+
+        if number_type == None:
+            number_type = 'Unknown'
+
+        print(f'[{profile_id}] {phone_number} is of the {number_type} type and is suppressed from SMS')
+
     # Create custom metric indicating a profile was scanned, and what the results were https://developers.klaviyo.com/en/reference/track-post
     # Create a cron job that will run this script over and over
     # Check if a profile's email and/or phone is already in the 'scanned_profiles_database.db', 
