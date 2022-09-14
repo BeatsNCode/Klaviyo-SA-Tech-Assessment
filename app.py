@@ -85,7 +85,7 @@ def suppress_email_address(email):
     response = requests.post(klaviyo_suppression_list_url, data=payload, headers=headers)
     return response
 
-# Create a funciton to suppress phone numbers that are not of the 'mobile' type
+# Create a function to suppress phone numbers that are not of the 'mobile' type
 def suppress_phone_number(phone):
     url = f'https://a.klaviyo.com/api/v2/list/{klaviyo_list_id}/subscribe?api_key={klaviyo_private_api_key}'
 
@@ -180,7 +180,7 @@ for profile in list_data:
         # suppress email address in Klaviyo
         suppress_email_address(email)
 
-    print(f'[{profile_id}] {email} has a Kickbox Sendex Score of {sendex_score}/1 - deliverability probability: {email_deliverability_probability}')
+        print(f'[{profile_id}] {email} has a Kickbox Sendex Score of {sendex_score}/1 - deliverability probability: {email_deliverability_probability}')
 
     # If a Phone Number is present on the profile, or the phone number is not of the 'mobile' type, suppress in Klaviyo.
     # Possible values for `Number Type` are `Mobile`, `Landline` and `VOIP`, and some VOIP lines are able to receive SMS,
@@ -189,14 +189,13 @@ for profile in list_data:
         # suppress phone number in Klaviyo
         suppress_phone_number(phone_number)
 
-        if number_type == 'None':
-            number_type = 'Unknown'
+        print(f'[{profile_id}] {phone_number} is of the {number_type} type and is suppressed from SMS')
 
     # Setting up customer_properties for Track Request
     customer_properties = {'$email': f'{email}', 
                            '$phone_number': f'{phone_number}'}
 
-    print(f'[{profile_id}] {phone_number} is of the {number_type} type and is suppressed from SMS')
+    
     print(' ') # extra line for logging purposes
 
     # Setting up event properties for Track Request
